@@ -177,7 +177,7 @@ inline void print_current_dp(const V& cut, const I& cut_size, const V& sol){
 #endif
 }
 
-// Returns cuv and cvu.
+// Returns number of crossings if u before v
 // cvu is number of pairs i, j in permanent such that i < j, i neighbor of u and j neighbor of v.
 // i.e. c(u,v) is the number of crossings of (v, u)
 I count_crossings(I u, I v, const VV& graph, const V& index)
@@ -272,7 +272,7 @@ void compute_best_permutation(const V& permutation_vertices, const I& end, const
 					continue;
 				}
 				I w = permutation_vertices[start + j];
-				cost += count_crossings(u, w, graph, index);
+				cost += count_crossings(w, u, graph, index);
 			}
 			if(cost < perm_DP[mask])
 			{
@@ -545,7 +545,7 @@ I run_solver(const VV& graph, const V& arrangement, const V& index, const VP& ne
 #endif
 	}
 	assert(cut_size == 0);
-	assert(cut_size < parameters.second.second);
+	assert(cut_size < parameters.second.second + 1);
 
 	I ans = sol[other_par][0]; // empty mask
 #ifdef __DEBUG
@@ -681,7 +681,7 @@ void print_solution_backwards(const VV& cut_sol_masks, const VV& sol_back_points
 		cout << "Batch: " << ordered_vertices << endl;
 		#endif
 
-		copy(ordered_vertices.rbegin(), ordered_vertices.rend(), back_inserter(out));
+		copy(ordered_vertices.begin(), ordered_vertices.end(), back_inserter(out));
 		mask = sol_back_points[i][mask];
 	}
 	reverse(out.begin(), out.end());
