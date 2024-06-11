@@ -151,18 +151,18 @@ Intuitively, the algorithm fixes an ordering with $A_{i-1} \cup Y$ as a prefix, 
 
 \section{Implementation details}
 
-Our solver removes isolated vertices from the graph at the beginning, and builds a new graph $G'$. This ensures that each vertex has at least one neighbor. The solver sorts the adjacency lists of each vertex by the order they appear on the linear arrangement and assigns a range to each vertex, given by the first and the last index (in the linear arrangement) of a neighbor of this vertex. This allows to compute crossing numbers between two vertices in polynomial time in $k$.
+Our solver starts by removing isolated vertices from the graph, building a new graph $G'$. This ensures that each vertex has at least one neighbor. The solver sorts the adjacencies of each vertex by their order on the linear arrangement $\ell$ and assigns a range to each vertex, given by the first and the last index (in the linear arrangement) of a neighbor of this vertex. This allows to compute crossing numbers between two vertices in polynomial time in $k$.
 After computing an optimal solution, the solver assigns to each vertex its original id, and appends isolated vertices in an arbitrary order.
 
 We use bit-masks to represent sets. To iterate over all supersets of $F$ that are subsets of $S'$ with constant time steps, we compute $S'_i\setminus F_i$, iterate over all its subsets $X'$ and compute $X = X' \cup F$ as the sets we are looking for.
 
-In order to output the ordering we keep track of all sets $S_i$, and for each subset $X\subset S_i$ we keep track of the set $X\setminus Y$ that was appended to $V_i \cup Y$ to compute an optimal ordering at $X$. We use backtracking to generate each suffix at each step, and for each such suffix we use an additional call to \cref{alg:subroutine} to output an optimal ordering for this set.
+In order to output the ordering we keep track of all sets $S_i$, and for each subset $X\subset S_i$ we keep track of the set $X\setminus Y$ that was appended to $A_i \cup Y$ to compute an optimal ordering at $X$. We use backtracking to generate each suffix at each step, and for each such suffix we use an additional call to \cref{alg:subroutine} to output an optimal ordering for this set.
 
 \section{Sketch of Correctness}
-It follows from \cref{lem:suited} that an optimal ordering has all vertices of $V_i$ ordered before $V\setminus (V_i \cup S_i)$.
-Hence, the correctness and the optimality of the algorithm follow by induction over $T_i$ where we show that the recursive formula \cref{eq:t-rec} computes exactly the number of edges presented in the definition of $T_i$ \cref{eq:t-def}.
+It follows from \cref{lem:suited} that an optimal ordering has all vertices of $A_i$ ordered before $V\setminus (A_i \cup S_i)$.
+Hence, the correctness and the optimality of the algorithm follow by induction over $i$ where we show that the recursive formula for $T_i$ \cref{eq:t-rec} computes exactly the number of cuts presented in the definition of $T_i$ \cref{eq:t-def}.
 
-Since each cut-edge has at most one endpoint in $V_1$, ist holds that $|S_i|\leq k$.
+Since each cut-edge has at most one endpoint in $W$, ist holds that $|S_i|\leq k$.
 The running time of the algorithm can be bounded by $3^k \operatorname{poly}(k)n$, since we iterate over all cuts $i$, and for each we iterate over all subsets of $S_i$, and over each subset of these subsets. We spend polynomial time at each such subset of a subset, so the running time can be bounded in 
 \[
 \sum_{i=1}^{n}\sum\limits_{S\subseteq S_i}\sum\limits_{X\subseteq S} \operatorname{poly}(k) = n3^k\operatorname{poly}(k).
