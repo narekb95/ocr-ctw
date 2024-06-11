@@ -113,18 +113,22 @@ Moreover, for a set $X\subseteq V^2$ we define $c(X)$ as the minimum crossing nu
 \end{definition}
 We call a pair of vertices $v_1, v_2$ suited, if $c(v_1,v_2)\cdot c(v_2,v_1) = 0$.
 Our algorithm is based on the following lemma:
-\begin{lemma}[{{\cite[Fact 5]{DBLP:journals/algorithmica/DujmovicW04}}}]
+\begin{lemma}[{{\cite[Fact 5]{DBLP:journals/algorithmica/DujmovicW04}}}]\label{lem:suited}
     Let $u,v \in V^2$ be two suited vertices. In any optimal solution $\pi_2$, it holds that if $u\leq_{\pi_2} v$ then $c(u,v) = 0$.
 \end{lemma}
 Our algorithm follows a dynamic programming approach over the cuts of the linear arrangement $\ell$.
 For $i\in[n]$, we define the set $S_i = V^2 \cap V(H_i)$ as the set of vertices of $V^2$ that are incident to edges of the $i$th cut.
 The dynamic programming tables are indexed by subsets of $S_i$.
 Formally, for $i\in [n]$ let $\mathcal{S}_i = \mathcal{P}(S_i)$ the power-set of $S_i$. we define the dynamic programming tables as vectors $T_i \in \mathbb{N}^{\mathcal{S}_i}$, where for $X\subseteq S_i$ we define $T_i[X]$ as follows:
-\[T_i[X] = c(V_i\cup X) + c(V_i, V\setminus (V_i\cup X)).\]
+\begin{equation} \label{eq:t-def}
+T_i[X] = c(V_i\cup X) + c(V_i, V\setminus (V_i\cup X)).
+\end{equation}
 
 At each cut $i$ our algorithm proceeds as follows: 
 Let $S'_i = S_{i-1} \cup S_i$, and $F = S_{i-1} \setminus S_{i}$. We call $F_i$ the set of forget vertices at the $i$th cut. The algorithm first computes both $S'$ and $F$. Then for each subset $X \subseteq S'_i$ that is a super set of $X \supseteq F_i$, let $X' = X\setminus F_i$. The algorithm computes $T_{i}[X']$ as follows:
-    \[T_i[X'] = \min\limits_{Y\subseteq X} c_1 + c2 + c3,\]
+\begin{equation} \label{eq:t-rec}
+    T_i[X'] = \min\limits_{Y\subseteq X} c_1 + c2 + c3,
+\end{equation}
 where
 \begin{itemize}
     \item $c_1 = T_{i-1}(Y)$,
@@ -141,10 +145,18 @@ Intuitively, the algorithm fixes consider orderings with $V_{i-1} \cup Y$ as a p
 \end{itemize}
 
 \section{Implementation details}
-We use bit-masks to represent sets. Since each cut-edge has at most one endpoint in $V_1$, ist holds that $|S_i|\leq k$. To iterate over all supersets of $F$ that are subsets of $S'$ with constant time steps, we compute $S'_i\setminus F_i$, iterate over all its subsets $X'$ and compute $X = X' \cup F$ as the sets we are looking for.
+We use bit-masks to represent sets. To iterate over all supersets of $F$ that are subsets of $S'$ with constant time steps, we compute $S'_i\setminus F_i$, iterate over all its subsets $X'$ and compute $X = X' \cup F$ as the sets we are looking for.
 
 In order to output the ordering we keep track of all sets $S_i$, and for each subset $X\subset S_i$ we keep track of the set $X\setminus Y$ that was appended to $V_i \cup Y$ to compute an optimal ordering at $X$. We use backtracking to generate each suffix at each step, and for each such suffix we use an additional call to \cref{alg:subroutine} to output an optimal ordering for this set.
 
-\section{Correctness of the algorithm}
+\section{Sketch of Correctness}
+It follows from \cref{lem:suited} that an optimal ordering has all vertices of $V_i$ ordered before $V\setminus (V_i \cup S_i)$.
+Hence, the correctness and the optimality of the algorithm follow by induction over $T_i$ where we show that the recursive formula \cref{eq:t-rec} computes exactly the number of edges presented in the definition of $T_i$ \cref{eq:t-def}.
+
+Since each cut-edge has at most one endpoint in $V_1$, ist holds that $|S_i|\leq k$.
+The running time of the algorithm can be bounded by $3^k \operatorname{poly}(k)n$, since we iterate over all cuts $i$, and for each we iterate over all subsets of $S_i$, and over each subset of these subsets. We spend polynomial time at each such subset of a subset, so the running time can be bounded in 
+\[
+\sum_{i=1}^{n}\sum\limits_{S\subseteq S_i}\sum\limits_{X\subseteq S} \operatorname{poly}(k) = n3^k\operatorname{poly}(k).
+\]
 \bibliography{ref}
 \end{document}
