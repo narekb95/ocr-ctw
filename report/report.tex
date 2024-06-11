@@ -72,15 +72,50 @@
     In this article, we describe `HALG2PACE', a solver for the one-sided crossing minimization problem on graphs given together with a low-cutwidth linear arrangement. 
     This solver was developed as part of the PACE challenge 2024 - parameterized track. The solver is based on a dynamic programming scheme over the given linear arrangement, and admits FPT running time with single-exponential dependence on the cutwidth of the given linear arrangement. The solver is implemented in C++ and meets the requirements presented by PACE challenge. The solver was submitted on optil.io under the user name `narekb95' and is available on github at \url{https://github.com/narekb95/ocr-ctw}
 \end{abstract}
-\section{Introduction}
-
 \section{Preliminaries}
-For a plane $P$, a graph embedding $\mu$
-The one-sided crossing minimization problem is a well-studied problem in graph embeddings, defined as follows: Let $P$ be a plane, and let $\ell_1, \ell_2$ be two horizontal non-overlapping lines in $P$. For a graph $G=$, an embedding of $G$ into $P$ is a mapping $\mu$, that maps each vertex of $G$ to a distinct points in $P$, and each edge $\{u,v\}\in E$  . A straight-line embedding is an embedding of $G$ to $P$ such that each edge is drawn as as 
-Given a bipartite graph $G = (V_1,V_2,E)$ together with a fixed ordering $\pi_1$ over $V_1$, asked is an ordering $\pi_2$ over $V_2$ that minimizes the number of crossings in an embedding of $G$ into two parallel non-overlapping lines, such taht $V_1$  minimizes the total number of crossings 
+For $n\in \mathbb{N}$, we denote by $[n]$ the set $\{1,\dots,n\}$.
+A \emph{Permutation} $\pi$ of a set $S$ is a bijective mapping from $S$ to $[|S|]$. For $i\in[|S|]$ we denote by $\pi_i$ the element $\pi^-1(i)$ of $S$. Each permutation $\pi$ of a set corresponds (bijectively) to a linear ordering $\leq_{\pi}$, where for $u,v\in s$ it holds that $u\leq_{\pi} v$ if $\pi(u)\leq \pi(v)$. We will use these two terms interchangeably. In particular, we will call $\pi$ an ordering, when we mean the ordering $\leq_{\pi}$ underlying the permutation $\pi$.
 
-and a linear arrangement of its vertices, the goal is to find a permutation of the vertices that minimizes the number of crossings in the drawing of the graph. The problem is known to be NP-hard in general, but admits efficient algorithms when the linear arrangement has low cutwidth. In this article, we describe a solver for the one-sided crossing minimization problem, which is based on a dynamic programming scheme over the given linear arrangement. The solver has a single exponential running time and is implemented in C++. The solver was submitted on optil.io under the user name `narekb95' and is available on github at 
+A two-layered drawing of a bipartite graph $G=(A,B,E)$ is a drawing that maps its vertices into two different horizontal lines, such that the vertices of $V^1$ are mapped to one line, and the vertices of $V^2$ are mapped to the other. Edges are drawn as straight-line segments between the points corresponding to their endpoints. A two-layered is given as a mapping $\mu\colon V\rightarrow \mathbb{N}^2$. Implicitly, $\mu$ maps each edge $\{u,v\} \in E$ to the line segment between $\mu(u)$ and $\mu(v)$.
+For $i\in[2]$, $V^1$, given an ordering $\pi$ over $V_i$, a two-layered drawing of $G$ respects $\pi$ if the order of the points corresponding to the images of the vertices of $V_i$ on the underlying horizontal line matches the order of the vertices themselves given by $\pi$.
 
-PACE2HALG is a solver for the one-sided crossing minimization problem, for graphs given together with a low-cutwidth linear arrangements. It is based on a dynamic programming scheme over the given linear arrangement, and has a single exponential running time. The solver is implemented in C++ and uses the PACE challenge API. The solver was submitted on optil.io under the user name `narekb95' and is available on github at \url{https://github.com/narekb95/ocr-ctw}.
+In a two-layered drawing $\mu$, and for two edges $e_1, e_2 \in E$, we say that $e_1$ and $e_2$ cross in $\mu$, if $\mu(e_1)$ and $\mu{e_2}$ intersect in a point that is not an endpoint of either line segments. The \emph{number of crossings} of $\mu$ is the number of unordered pairs of edges $\{e_1, e_2\}\in \binom{E}{2}$ such that $e_1$ and $e_2$ cross in $\mu$.
+The following observations are Folklore. We refer to \cite{DBLP:journals/algorithmica/DujmovicW04} for more information.
+\begin{lemma}
+    Given a bipartite graph $G=(V^1,V^2, E)$, together with two orderings $\pi_1, \pi_2$ over $V^1$ and $V^2$ respectively, the number of crossings of any two-layered drawing  of $G$ that respects $\pi_1$ and $\pi_2$ is invariant of the drawing itself, and determined solely by $\pi_1$ and $\pi_2$.
+    We call this number of crossings of any such map as the \emph{crossings number of $(\pi_1, pi_2)$}.
+\end{lemma}
 
+\begin{definition}
+    The \emph{one-sided crossing minimization problem} is defined as follows: Given a bipartite graph $G = (V^1,V^2,E)$ together with a fixed ordering $\pi_1$ over $V^1$, asked is a permutation $\pi_2$ over $V^2$ that minimizes the crossing number of $(\pi_1, \pi_2)$.
+\end{definition}
+
+A linear arrangement of a graph $G=(V,E)$ is linear ordering $\ell = v_1\leq \dots \leq v_n$ over the vertices of the graph. Let $V_i = \{v_1,\dots v_i\}$. For $v_i \in V$, we define the cut of $\ell$ at $v_i$ as the set of edges having one endpoint in $V_i$ and the other in $V\setminus V_i$, and call it the $i$th cut of $\ell$. The cut-graph $H_i = (L_i,R_i, E_i)$ is given by the edges of the $i$th cut together with their endpoints, where $L_i\subseteq V_i$ are the endpoints in $V_i$, and $R_i \subseteq V\setminus V_i$ are the other endpoints.
+
+
+\section{The algorithm}
+Finally, we introduce some notation for our algorithm. Along this work, we assume $G=(V^1,V^2, E)$ is the input graph, and $\ell$ a linear arrangement of $G$. Let $k$ be the largest size of a cut of $\ell$. Let $n = |V|$ and $m=|E|$.
+Let $\pi_1$ be the give fixed ordering over $V^1$, and $\pi_2$ be the asked ordering.
+Finally, for two different vertices $v_1, v_2 \in V^2$, we define $c(v_1,v_2)$ as
+\[c(v_1,v_2) = |\{(w_2, w_1)\in N(v_2)\times N(v_1)\colon w_2 <_{\pi_1} w_1\}|.\] 
+\begin{definition}
+    Given a bipartite graph $G= (V_1, V_2, E)$ together with a permutation $\pi_1$ over $V_1$, a pair of vertices $(v_1,v_2)\in V_2^2$ is called suited (in respect to $\pi_1$), if $w_1\leq_{pi_1}w_2$ for each $w_1\in N_G(v_1)$ and $w_2\in N_G(v_2)$.
+\end{definition}
+We call a pair of vertices $v_1, v_2$ suited, if $c(v_1,v_2)\cdot c(v_2,v_1) = 0$.
+Our algorithm is based on the following lemma:
+\begin{lemma}[{{\cite[Fact 5]{DBLP:journals/algorithmica/DujmovicW04}}}]
+    Let $u,v \in V^2$ be two suited vertices. In any optimal solution $\pi_2$, it holds that if $u\leq_{\pi_2} v$ then $c(u,v) = 0$.
+\end{lemma}
+Our algorithm follows a dynamic programming approach over the cuts of the linear arrangement $\ell$.
+For $i\in[n]$, we define the set $S_i = V^2 \cap V(H_i)$ as the set of vertices of $V^2$ that are incident to edges of the $i$th cut.
+The dynamic programming tables are indexed by subsets of $S_i$.
+Formally, for $i\in [n]$ let $\mathcal{S}_i = \mathcal{P}(S_i)$ the power-set of $S_i$. we define the dynamic programming tables as vectors $T_i \in \mathbb{N}^{\mathcal{S}_i}$, where for $X\subseteq S_i$ we define $T_i[X]$ as follows: Let $G_i = G[V^1, V^2\cap(V_i \cup X)]$. Then $T_i[X]$ is the minimum number of crossings of $(\pi_1, \pi')$ over all orderings $\pi'$ of $V^2\cap(V_i\cup X)$.
+
+At each cut $i$ our algorithm proceeds as follows: 
+
+\section{Correctness and running time}
+\section{Implementation details}
+
+\section{Correctness of the algorithm}
+\bibliography{ref}
 \end{document}
