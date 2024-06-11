@@ -62,6 +62,7 @@
 \SeriesVolume{42}
 \ArticleNo{23}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newtheorem{algorithm}{Algorithm}
 
 \begin{document}
 
@@ -98,6 +99,15 @@ Finally, we introduce some notation for our algorithm. Along this work, we assum
 Let $\pi_1$ be the give fixed ordering over $V^1$, and $\pi_2$ be the asked ordering.
 Finally, for two different vertices $v_1, v_2 \in V^2$, we define $c(v_1,v_2)$ as
 \[c(v_1,v_2) = |\{(w_2, w_1)\in N(v_2)\times N(v_1)\colon w_2 <_{\pi_1} w_1\}|.\] 
+For two disjoint sets of vertices $X,X'\subseteq V_2$, we define
+\[c(X,X') = \sum\limits_{(v_1,v_2)\in X\times X'}c(v_1,v_2).\]
+Moreover, for a set $X\subseteq V^2$ we define $c(X)$ as the minimum crossing number of $(\pi_1, \pi')$ of $G[V_1, X]$ over all orderings $\pi'$ of $X$.
+
+\begin{algorithm}\label{alg:subroutine}
+    We start a subroutine to compute $c(X)$ for a small set $X$ in time $2^n\operatorname{poly}(n)$. The algorithm follows a similar approach to the well-known dynamic programming algorithm for the Hamiltonian Cycle given by Held and Karp \cite{DBLP:conf/acm/HeldK61} and independently by Bellman \cite{bellman1958combinatorial}. The subroutine iterates over all subsets of $X$ in increasing order (given by the subset relation), and computes an optimal ordering induced by each subset, by the recusive formula
+    \[c(X) = min\{c(X\setminus\{v\}) + c(X\setminus \{v\}, v)\colon v \in X\}./\]    
+\end{algorithm}
+
 \begin{definition}
     Given a bipartite graph $G= (V_1, V_2, E)$ together with a permutation $\pi_1$ over $V_1$, a pair of vertices $(v_1,v_2)\in V_2^2$ is called suited (in respect to $\pi_1$), if $w_1\leq_{pi_1}w_2$ for each $w_1\in N_G(v_1)$ and $w_2\in N_G(v_2)$.
 \end{definition}
@@ -109,9 +119,18 @@ Our algorithm is based on the following lemma:
 Our algorithm follows a dynamic programming approach over the cuts of the linear arrangement $\ell$.
 For $i\in[n]$, we define the set $S_i = V^2 \cap V(H_i)$ as the set of vertices of $V^2$ that are incident to edges of the $i$th cut.
 The dynamic programming tables are indexed by subsets of $S_i$.
-Formally, for $i\in [n]$ let $\mathcal{S}_i = \mathcal{P}(S_i)$ the power-set of $S_i$. we define the dynamic programming tables as vectors $T_i \in \mathbb{N}^{\mathcal{S}_i}$, where for $X\subseteq S_i$ we define $T_i[X]$ as follows: Let $G_i = G[V^1, V^2\cap(V_i \cup X)]$. Then $T_i[X]$ is the minimum number of crossings of $(\pi_1, \pi')$ over all orderings $\pi'$ of $V^2\cap(V_i\cup X)$.
+Formally, for $i\in [n]$ let $\mathcal{S}_i = \mathcal{P}(S_i)$ the power-set of $S_i$. we define the dynamic programming tables as vectors $T_i \in \mathbb{N}^{\mathcal{S}_i}$, where for $X\subseteq S_i$ we define $T_i[X]$ as follows:
+\[T_i[X] = c(V_i\cup X) + c(V_i, V\setminus (V_i\cup X)).\]
 
 At each cut $i$ our algorithm proceeds as follows: 
+Let $S'_i = S_{i-1} \cup S_i$, and $F = S_{i-1} \setminus S_{i}$. We call $F_i$ the set of forget vertices at the $i$th cut. The algorithm first computes both $S'$ and $F$. Then for each subset $X' \subseteq S'_i$ that is a super set of $X' \supseteq F_i$, let $X = X'\setminus F_i$. The algorithm computes $T_{i}[X]$ as
+\[T_i[X] = c_1 + c2 + c3\],
+where
+\begin{itemize}
+    \item $c_1 = T_{i-1}(X'\cap S_{i-1})$,
+    \item $c_2 = c(X')$
+    \item $c_3 = c(X', S_{i-1})$
+\end{itemize}
 
 \section{Correctness and running time}
 \section{Implementation details}
