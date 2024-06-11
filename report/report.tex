@@ -64,6 +64,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newtheorem{algorithm}{Algorithm}
 
+\newcommand{\layerone}{\ensuremath{U}}
+\newcommand{\layertwo}{\ensuremath{W}}
+
 \begin{document}
 
 \maketitle
@@ -71,80 +74,86 @@
 %TODO mandatory: add short abstract of the document
 \begin{abstract}
     In this article, we describe `HALG2PACE', a solver for the one-sided crossing minimization problem on graphs given together with a low-cutwidth linear arrangement. 
-    This solver was developed as part of the PACE challenge 2024 - parameterized track. The solver is based on a dynamic programming scheme over the given linear arrangement, and admits FPT running time with single-exponential dependence on the cutwidth of the given linear arrangement. The solver is implemented in C++ and meets the requirements presented by PACE challenge. The solver was submitted on optil.io under the user name `narekb95' and is available on github at \url{https://github.com/narekb95/ocr-ctw}
+    This solver was developed as part of the PACE challenge 2024 - parameterized track. The solver is based on a dynamic programming scheme over the given linear arrangement, and admits FPT running time with single-exponential dependence on the cutwidth of the given linear arrangement. The solver is implemented in C++ and meets the requirements presented by PACE challenge. The solver was submitted on optil.io under the username `narekb95' and is available on github at \url{https://github.com/narekb95/ocr-ctw}
 \end{abstract}
 \section{Preliminaries}
 For $n\in \mathbb{N}$, we denote by $[n]$ the set $\{1,\dots,n\}$.
-A \emph{Permutation} $\pi$ of a set $S$ is a bijective mapping from $S$ to $[|S|]$. For $i\in[|S|]$ we denote by $\pi_i$ the element $\pi^-1(i)$ of $S$. Each permutation $\pi$ of a set corresponds (bijectively) to a linear ordering $\leq_{\pi}$, where for $u,v\in s$ it holds that $u\leq_{\pi} v$ if $\pi(u)\leq \pi(v)$. We will use these two terms interchangeably. In particular, we will call $\pi$ an ordering, when we mean the ordering $\leq_{\pi}$ underlying the permutation $\pi$.
+A \emph{Permutation} $\pi$ of a set $S$ is a bijective mapping from $S$ to $[|S|]$. For $i\in[|S|]$ we denote by $\pi_i$ the element $\pi^{-1}(i)$ of $S$. Each permutation $\pi$ of a set corresponds (bijectively) to a linear ordering $\leq_{\pi}$, where for $u,v\in S$ it holds that $u\leq_{\pi} v$ if $\pi(u)\leq \pi(v)$. We will use these two terms interchangeably. In particular, we will call $\pi$ an ordering, when we mean the ordering $\leq_{\pi}$ underlying the permutation $\pi$.
 
-A two-layered drawing of a bipartite graph $G=(A,B,E)$ is a drawing that maps its vertices into two different horizontal lines, such that the vertices of $V^1$ are mapped to one line, and the vertices of $V^2$ are mapped to the other. Edges are drawn as straight-line segments between the points corresponding to their endpoints. A two-layered is given as a mapping $\mu\colon V\rightarrow \mathbb{N}^2$. Implicitly, $\mu$ maps each edge $\{u,v\} \in E$ to the line segment between $\mu(u)$ and $\mu(v)$.
-For $i\in[2]$, $V^1$, given an ordering $\pi$ over $V_i$, a two-layered drawing of $G$ respects $\pi$ if the order of the points corresponding to the images of the vertices of $V_i$ on the underlying horizontal line matches the order of the vertices themselves given by $\pi$.
+Given a graph $G = (V,E)$ and a vertex $v$ of $G$, we denote by $N_G(v)$ the neighborhood of $v$ in $G$. We define $N_G[v] = N_G(v)\cup \{v\}$ as the closed neighborhood of $v$ in $G$. We omit the subscript $G$ when the graph is clear from the context.
 
-In a two-layered drawing $\mu$, and for two edges $e_1, e_2 \in E$, we say that $e_1$ and $e_2$ cross in $\mu$, if $\mu(e_1)$ and $\mu{e_2}$ intersect in a point that is not an endpoint of either line segments. The \emph{number of crossings} of $\mu$ is the number of unordered pairs of edges $\{e_1, e_2\}\in \binom{E}{2}$ such that $e_1$ and $e_2$ cross in $\mu$.
-The following observations are Folklore. We refer to \cite{DBLP:journals/algorithmica/DujmovicW04} for more information.
+A two-layered drawing of a bipartite graph $G=(A,B,E)$ is a drawing that maps its vertices into two different horizontal lines, such that the vertices of $\layerone$ are mapped to one line, and the vertices of $\layertwo$ are mapped to the other. Edges are drawn as straight-line segments between the points corresponding to their endpoints. A two-layered drawing is given as a mapping $\mu\colon V\rightarrow \mathbb{R}^2$. Implicitly, $\mu$ maps each edge $\{u,v\} \in E$ to the line segment between $\mu(u)$ and $\mu(v)$.
+
+Let $X\in \{\layerone, \layertwo\}$. Given an ordering $\pi$ over $X$, a two-layered drawing $\mu$ of $G$ respects $\pi$, if the order of the images of the vertices of $X$  on the underlying horizontal line matches the order of the vertices of $X$ themselves given by $\pi$, i.e.\ for $u,v \in X$, and for $\mu(u) = (x_u, y_0)$, and $\mu_v = (x_v, y_0)$, it holds that $x_u \leq x_v$ if $u\leq_{\pi} v$.
+
+In a two-layered drawing $\mu$, and for two edges $e_1, e_2 \in E$, we say that $e_1$ and $e_2$ cross in $\mu$, if $\mu(e_1)$ and $\mu({e_2})$ intersect in a point that is not an endpoint of either line segment. The \emph{number of crossings} of $\mu$ is the number of unordered pairs of edges $\{e_1, e_2\}\in \binom{E}{2}$ such that $e_1$ and $e_2$ cross in $\mu$.
+The following observations are Folklore. We refer to \cite{DBLP:journals/algorithmica/DujmovicW04} for further details.
 \begin{lemma}
-    Given a bipartite graph $G=(V^1,V^2, E)$, together with two orderings $\pi_1, \pi_2$ over $V^1$ and $V^2$ respectively, the number of crossings of any two-layered drawing  of $G$ that respects $\pi_1$ and $\pi_2$ is invariant of the drawing itself, and determined solely by $\pi_1$ and $\pi_2$.
-    We call this number of crossings of any such map as the \emph{crossings number of $(\pi_1, pi_2)$}.
+    Given a bipartite graph $G=(\layerone,\layertwo, E)$, together with two orderings $\pi_1, \pi_2$ over $\layerone$ and $\layertwo$ respectively, the number of crossings of any two-layered drawing  of $G$ that respects $\pi_1$ and $\pi_2$ is invariant of the drawing itself, and is determined solely by $\pi_1$ and $\pi_2$.
+    We call the number of crossings of any such drawing as the \emph{crossing number of $(\pi_1, \pi_2)$}.
 \end{lemma}
 
 \begin{definition}
-    The \emph{one-sided crossing minimization problem} is defined as follows: Given a bipartite graph $G = (V^1,V^2,E)$ together with a fixed ordering $\pi_1$ over $V^1$, asked is a permutation $\pi_2$ over $V^2$ that minimizes the crossing number of $(\pi_1, \pi_2)$.
+    The \emph{one-sided crossing minimization problem} is defined as follows: Given a bipartite graph $G = (\layerone,\layertwo,E)$ together with a fixed ordering $\pi_1$ over $\layerone$, asked is a permutation $\pi_2$ over $\layertwo$ that minimizes the crossing number of $(\pi_1, \pi_2)$.
 \end{definition}
 
-A linear arrangement of a graph $G=(V,E)$ is linear ordering $\ell = v_1\leq \dots \leq v_n$ over the vertices of the graph. Let $V_i = \{v_1,\dots v_i\}$. For $v_i \in V$, we define the cut of $\ell$ at $v_i$ as the set of edges having one endpoint in $V_i$ and the other in $V\setminus V_i$, and call it the $i$th cut of $\ell$. The cut-graph $H_i = (L_i,R_i, E_i)$ is given by the edges of the $i$th cut together with their endpoints, where $L_i\subseteq V_i$ are the endpoints in $V_i$, and $R_i \subseteq V\setminus V_i$ are the other endpoints.
+A linear arrangement of a graph $G=(V,E)$ is linear ordering $\ell = v_1, \dots, v_n$ over $V$. Let $V_i = \{v_1,\dots v_i\}$. For $v_i \in V$, we define the cut of $\ell$ at $v_i$ as the set of edges having one endpoint in $V_i$ and the other in $V\setminus V_i$, and call it the $i$th cut of $\ell$.
+The cutwidth of a linear arrangement $\ell$ is the largest size of a cut of $\ell$. For $\delta$ the largest degree of a graph, it holds that the cutwidth of any linear arrangement of this graph is at least $\lceil\delta/2\rceil$.
+The cut-graph $H_i = (L_i,R_i, E_i)$ is given by the edges of the $i$th cut together with their endpoints, where $L_i\subseteq V_i$ are the endpoints in $V_i$, and $R_i \subseteq V\setminus V_i$ are the other endpoints. We define $A_i = V_i\setminus A_i$.
 
 
 \section{The algorithm}
-Finally, we introduce some notation for our algorithm. Along this work, we assume $G=(V^1,V^2, E)$ is the input graph, and $\ell$ a linear arrangement of $G$. Let $k$ be the largest size of a cut of $\ell$. Let $n = |V|$ and $m=|E|$.
-Let $\pi_1$ be the give fixed ordering over $V^1$, and $\pi_2$ be the asked ordering.
-Finally, for two different vertices $v_1, v_2 \in V^2$, we define $c(v_1,v_2)$ as
+We introduce some notation for our algorithm. Along this work, we assume $G=(\layerone,\layertwo, E)$ is the input graph, and $\ell$ a linear arrangement of $G$. Let $k$ be the largest size of a cut of $\ell$. Let $n = |V|$ and $m=|E|$.
+Let $\pi_1$ be the give fixed ordering over $\layerone$, and $\pi_2$ be the asked ordering.
+Finally, for two different vertices $v_1, v_2 \in \layertwo$, we define $c(v_1,v_2)$ as
 \[c(v_1,v_2) = |\{(w_2, w_1)\in N(v_2)\times N(v_1)\colon w_2 <_{\pi_1} w_1\}|.\] 
-For two disjoint sets of vertices $X,X'\subseteq V_2$, we define
+For two disjoint sets of vertices $X,X'\subseteq W$, we define
 \[c(X,X') = \sum\limits_{(v_1,v_2)\in X\times X'}c(v_1,v_2).\]
-Moreover, for a set $X\subseteq V^2$ we define $c(X)$ as the minimum crossing number of $(\pi_1, \pi')$ of $G[V_1, X]$ over all orderings $\pi'$ of $X$.
+Moreover, for a set $X\subseteq \layertwo$ we define $c(X)$ as the minimum crossing number of $(\pi_1, \pi')$ in $G[V_1, X]$ over all orderings $\pi'$ of $X$.
 
 \begin{algorithm}\label{alg:subroutine}
-    We start a subroutine to compute $c(X)$ for a small set $X$ in time $2^n\operatorname{poly}(n)$. The algorithm follows a similar approach to the well-known dynamic programming algorithm for the Hamiltonian Cycle given by Held and Karp \cite{DBLP:conf/acm/HeldK61} and independently by Bellman \cite{bellman1958combinatorial}. The subroutine iterates over all subsets of $X$ in increasing order (given by the subset relation), and computes an optimal ordering induced by each subset, by the recusive formula
-    \[c(X) = min\{c(X\setminus\{v\}) + c(X\setminus \{v\}, v)\colon v \in X\}./\]    
+    We provide a subroutine to compute $c(X)$ for a small set $X$ in time $2^{|X|}\operatorname{poly}(|X|+k)$. The algorithm follows a similar approach to the well-known dynamic programming algorithm for the Hamiltonian Cycle given by Held and Karp \cite{DBLP:conf/acm/HeldK61} and independently by Bellman \cite{bellman1958combinatorial}. The subroutine iterates over all subsets of $X$ in an increasing order (given by the subset relation), and computes an optimal ordering induced by each subset using the recursive formula
+    \[c(X) = min\{c(X\setminus\{v\}) + c(X\setminus \{v\}, v)\colon v \in X\}.\]    
 \end{algorithm}
 
-\begin{definition}
-    Given a bipartite graph $G= (V_1, V_2, E)$ together with a permutation $\pi_1$ over $V_1$, a pair of vertices $(v_1,v_2)\in V_2^2$ is called suited (in respect to $\pi_1$), if $w_1\leq_{pi_1}w_2$ for each $w_1\in N_G(v_1)$ and $w_2\in N_G(v_2)$.
-\end{definition}
-We call a pair of vertices $v_1, v_2$ suited, if $c(v_1,v_2)\cdot c(v_2,v_1) = 0$.
-Our algorithm is based on the following lemma:
+We call a pair of vertices $v_1, v_2 \in W$ suited, if $c(v_1,v_2)\cdot c(v_2,v_1) = 0$. Our algorithm is based on the following lemma:
+
 \begin{lemma}[{{\cite[Fact 5]{DBLP:journals/algorithmica/DujmovicW04}}}]\label{lem:suited}
-    Let $u,v \in V^2$ be two suited vertices. In any optimal solution $\pi_2$, it holds that if $u\leq_{\pi_2} v$ then $c(u,v) = 0$.
+    Let $u,v \in \layertwo$ be two suited vertices. In any optimal solution $\pi_2$, it holds that if $u\leq_{\pi_2} v$ then $c(u,v) = 0$.
 \end{lemma}
 Our algorithm follows a dynamic programming approach over the cuts of the linear arrangement $\ell$.
-For $i\in[n]$, we define the set $S_i = V^2 \cap V(H_i)$ as the set of vertices of $V^2$ that are incident to edges of the $i$th cut.
+For $i\in[n]$, we define the set $S_i = \layertwo \cap V(H_i)$ as the set of vertices of $\layertwo$ that are incident to edges of the $i$th cut.
 The dynamic programming tables are indexed by subsets of $S_i$.
-Formally, for $i\in [n]$ let $\mathcal{S}_i = \mathcal{P}(S_i)$ the power-set of $S_i$. we define the dynamic programming tables as vectors $T_i \in \mathbb{N}^{\mathcal{S}_i}$, where for $X\subseteq S_i$ we define $T_i[X]$ as follows:
+Formally, for $i\in [n]$ let $\mathcal{S}_i = \mathcal{P}(S_i)$ the power-set of $S_i$. we define the dynamic programming tables as vectors $T_i \in \mathbb{N}^{\mathcal{S}_i}$, where for $X\subseteq S_i$ it holds that:
 \begin{equation} \label{eq:t-def}
-T_i[X] = c(V_i\cup X) + c(V_i, V\setminus (V_i\cup X)).
+T_i[X] = c(A_i\cup X) + c(A_i, V\setminus (A_i\cup X)).
 \end{equation}
+Intuitively, for each subset $X \subseteq S_i$ we fix $A_i\cup X$ as a prefix of the final ordering and count the optimal number of crossings in an optimal ordering of $A_i \cup X$ plus the number of crossings between $A_i$ and the rest of $S_i$. It follows by \cref{lem:suited} that the vertices of $A_i$ precede any vertex of $W\setminus (A_i\cup S_i)$ in an optimal ordering.
 
 At each cut $i$ our algorithm proceeds as follows: 
-Let $S'_i = S_{i-1} \cup S_i$, and $F = S_{i-1} \setminus S_{i}$. We call $F_i$ the set of forget vertices at the $i$th cut. The algorithm first computes both $S'$ and $F$. Then for each subset $X \subseteq S'_i$ that is a super set of $X \supseteq F_i$, let $X' = X\setminus F_i$. The algorithm computes $T_{i}[X']$ as follows:
+Let $S'_i = S_{i-1} \cup S_i$, and $F_i = S_{i-1} \setminus S_{i}$. We call $F_i$ the set of forget vertices at the $i$th cut. The algorithm first computes both $S'$ and $F$. Then for each set $X$ with $F_i \subseteq X \subseteq S'_i$, i.e. $X$ is a subset of $S'_i$ and a super set of $F_i$, let $X' = X\setminus F_i$. The algorithm computes $T_{i}[X']$ as follows:
 \begin{equation} \label{eq:t-rec}
-    T_i[X'] = \min\limits_{Y\subseteq X} c_1 + c2 + c3,
+    T_i[X'] = \min\limits_{Y\subseteq X} c_1 + c_2 + c_3 + c_4,
 \end{equation}
-where
 \begin{itemize}
-    \item $c_1 = T_{i-1}(Y)$,
+    \item where $c_1 = T_{i-1}(Y)$,
     \item $c_2 = c(X\setminus Y)$,
-    \item $c_3 = c(Y, X)$,
+    \item $c_3 = c(Y, X\setminus Y)$,
     \item and $c_4 = c(F, S_i \setminus X')$.
 \end{itemize}
-Intuitively, the algorithm fixes consider orderings with $V_{i-1} \cup Y$ as a prefix, and append $X \setminus Y$ to this prefix (using the best ordering for $X\setminus Y$). Now we explain each summand in the states sum:
+Intuitively, the algorithm fixes an ordering with $A_{i-1} \cup Y$ as a prefix, and append $X \setminus Y$ to this prefix (using the best ordering for $X\setminus Y$ given by \cref{alg:subroutine}). Now we explain each summand in the states sum:
 \begin{itemize}
-    \item $c_1$ is the number of crossings induced by the prefix $V_{i-1}\cup Y$.
-    \item $c_2$ is the number of crossings in induced by $X\setminus Y$ and is computing using \cref{alg:subroutine}.
-    \item $c_3$ is the number of crossings introduced by appending $X$ to the prefix ordering (edges between $V_{i-1}$ and $X$ are accounted for in $c_1$).
-    \item $c_4$ is the number of edges between $F$ and $V\setminus V_{i}$, since $F = V_i \setminus V_{i-1}$.
+    \item $c_1$ is the number of crossings induced by the prefix $A_{i-1}\cup Y$ and the crossings between $A_{i-1}$ and $V\setminus A_i$.
+    \item $c_2$ is the number of crossings in induced by $X\setminus Y$.
+    \item $c_3$ is the number of crossings introduced by appending $Y$ to the prefix ordering (edges between $A_{i-1}$ and $Y$ are accounted for in $c_1$).
+    \item $c_4$ is the number of edges between $F$ and $V\setminus (A_{i-1}\cup X)$, since $F = A_i \setminus A_{i-1}$.
 \end{itemize}
 
 \section{Implementation details}
+
+Our solver removes isolated vertices from the graph at the beginning, and builds a new graph $G'$. This ensures that each vertex has at least one neighbor. The solver sorts the adjacency lists of each vertex by the order they appear on the linear arrangement and assigns a range to each vertex, given by the first and the last index (in the linear arrangement) of a neighbor of this vertex. This allows to compute crossing numbers between two vertices in polynomial time in $k$.
+After computing an optimal solution, the solver assigns to each vertex its original id, and appends isolated vertices in an arbitrary order.
+
 We use bit-masks to represent sets. To iterate over all supersets of $F$ that are subsets of $S'$ with constant time steps, we compute $S'_i\setminus F_i$, iterate over all its subsets $X'$ and compute $X = X' \cup F$ as the sets we are looking for.
 
 In order to output the ordering we keep track of all sets $S_i$, and for each subset $X\subset S_i$ we keep track of the set $X\setminus Y$ that was appended to $V_i \cup Y$ to compute an optimal ordering at $X$. We use backtracking to generate each suffix at each step, and for each such suffix we use an additional call to \cref{alg:subroutine} to output an optimal ordering for this set.
