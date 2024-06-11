@@ -123,17 +123,27 @@ Formally, for $i\in [n]$ let $\mathcal{S}_i = \mathcal{P}(S_i)$ the power-set of
 \[T_i[X] = c(V_i\cup X) + c(V_i, V\setminus (V_i\cup X)).\]
 
 At each cut $i$ our algorithm proceeds as follows: 
-Let $S'_i = S_{i-1} \cup S_i$, and $F = S_{i-1} \setminus S_{i}$. We call $F_i$ the set of forget vertices at the $i$th cut. The algorithm first computes both $S'$ and $F$. Then for each subset $X' \subseteq S'_i$ that is a super set of $X' \supseteq F_i$, let $X = X'\setminus F_i$. The algorithm computes $T_{i}[X]$ as
-\[T_i[X] = c_1 + c2 + c3\],
+Let $S'_i = S_{i-1} \cup S_i$, and $F = S_{i-1} \setminus S_{i}$. We call $F_i$ the set of forget vertices at the $i$th cut. The algorithm first computes both $S'$ and $F$. Then for each subset $X \subseteq S'_i$ that is a super set of $X \supseteq F_i$, let $X' = X\setminus F_i$. The algorithm computes $T_{i}[X']$ as follows:
+    \[T_i[X'] = \min\limits_{Y\subseteq X} c_1 + c2 + c3,\]
 where
 \begin{itemize}
-    \item $c_1 = T_{i-1}(X'\cap S_{i-1})$,
-    \item $c_2 = c(X')$
-    \item $c_3 = c(X', S_{i-1})$
+    \item $c_1 = T_{i-1}(Y)$,
+    \item $c_2 = c(X\setminus Y)$,
+    \item $c_3 = c(Y, X)$,
+    \item and $c_4 = c(F, S_i \setminus X')$.
+\end{itemize}
+Intuitively, the algorithm fixes consider orderings with $V_{i-1} \cup Y$ as a prefix, and append $X \setminus Y$ to this prefix (using the best ordering for $X\setminus Y$). Now we explain each summand in the states sum:
+\begin{itemize}
+    \item $c_1$ is the number of crossings induced by the prefix $V_{i-1}\cup Y$.
+    \item $c_2$ is the number of crossings in induced by $X\setminus Y$ and is computing using \cref{alg:subroutine}.
+    \item $c_3$ is the number of crossings introduced by appending $X$ to the prefix ordering (edges between $V_{i-1}$ and $X$ are accounted for in $c_1$).
+    \item $c_4$ is the number of edges between $F$ and $V\setminus V_{i}$, since $F = V_i \setminus V_{i-1}$.
 \end{itemize}
 
-\section{Correctness and running time}
 \section{Implementation details}
+We use bit-masks to represent sets. Since each cut-edge has at most one endpoint in $V_1$, ist holds that $|S_i|\leq k$. To iterate over all supersets of $F$ that are subsets of $S'$ with constant time steps, we compute $S'_i\setminus F_i$, iterate over all its subsets $X'$ and compute $X = X' \cup F$ as the sets we are looking for.
+
+In order to output the ordering we keep track of all sets $S_i$, and for each subset $X\subset S_i$ we keep track of the set $X\setminus Y$ that was appended to $V_i \cup Y$ to compute an optimal ordering at $X$. We use backtracking to generate each suffix at each step, and for each such suffix we use an additional call to \cref{alg:subroutine} to output an optimal ordering for this set.
 
 \section{Correctness of the algorithm}
 \bibliography{ref}
